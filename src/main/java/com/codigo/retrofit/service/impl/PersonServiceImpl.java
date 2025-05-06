@@ -2,6 +2,7 @@ package com.codigo.retrofit.service.impl;
 
 import com.codigo.retrofit.aggregates.response.ReniecResponse;
 import com.codigo.retrofit.entity.PersonEntity;
+import com.codigo.retrofit.exception.ConsultaReniecException;
 import com.codigo.retrofit.repository.PersonRepository;
 import com.codigo.retrofit.retrofit.ClientReniecService;
 import com.codigo.retrofit.retrofit.ClientRetrofit;
@@ -34,12 +35,19 @@ public class PersonServiceImpl implements PersonService {
 
     // retrofit
     @Override
-    public ReniecResponse findByDni(String dni) throws IOException {
-        Response<ReniecResponse> executeReniec = preparedClient(dni).execute();
-        if (executeReniec.isSuccessful() && Objects.nonNull(executeReniec.body())) {
-            return executeReniec.body();
+    public ReniecResponse findByDni(String dni) {
+        try {
+            Response<ReniecResponse> executeReniec = preparedClient(dni).execute();
+            if (executeReniec.isSuccessful() && Objects.nonNull(executeReniec.body())) {
+                return executeReniec.body();
+            } else {
+                throw new ConsultaReniecException("Error en la respuesta del servicio Reniec: " +
+                        executeReniec.code() + " - " + executeReniec.message());
+            }
+        } catch (IOException e) {
+            log.error("Error al consultar servicio Reniec: {}", e.getMessage());
+            throw new ConsultaReniecException("No se pudo conectar con el servicio Reniec", e);
         }
-        return new ReniecResponse();
     }
 
     private Call<ReniecResponse> preparedClient(String dni) {
@@ -77,4 +85,5 @@ public class PersonServiceImpl implements PersonService {
         personRepository.deleteById(id);
     }
 }
+
 
